@@ -1,6 +1,6 @@
 # 🏥 Aura Health Systems
 
-> A centralized healthcare coordination platform that bridges the gap between patients and doctors — enabling seamless communication, unified medical records, smart medication tracking, and real-time collaboration.
+> An AI-enhanced, intelligent healthcare coordination ecosystem replacing scattered WhatsApp channels and physical reports with a unified, proactive platform for Patients, Doctors, and Caregivers.
 
 ![Aura Health Systems](https://img.shields.io/badge/Aura-Health%20Systems-006b5e?style=for-the-badge&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
@@ -11,55 +11,43 @@
 
 ## 🎯 Problem Statement
 
-Current healthcare systems suffer from:
+Current healthcare models (especially for chronic care or post-op recovery) suffer from:
+1. **Fragmented Communication** — Patients text doctors on WhatsApp, mixing critical health data with casual chats.
+2. **Scattered History** — Medical records, past prescriptions, and lab reports are physically scattered.
+3. **No Proactive Tracking** — Doctors have no idea if a patient is actually taking their prescribed medication.
+4. **Poor Care Continuity** — Caregivers (family members or nurses) are left out of the medical loop.
 
-1. **Fragmented Communication** — Calls, WhatsApp, no structured channel
-2. **Scattered Medical Data** — Reports, prescriptions, history not unified
-3. **No Continuity of Care** — Doctors lack patient history context
-4. **Poor Follow-up Tracking** — Patients forget meds, no monitoring
-5. **Lack of Proactive Care** — No reminders, no alerts, no intelligence
+## ✨ Our Solution: The Aura Ecosystem
 
-## ✨ Solution
+Aura Health Systems solves this by creating a highly structured, data-driven environment with role-based specialized dashboards.
 
-Aura Health Systems directly addresses these issues with:
-
-| Feature | Description |
-|---------|-------------|
-| 🗓️ Smart Scheduling | Book appointments, automated reminders |
-| 📋 Unified Records | Medical records, prescriptions, consultation history in one place |
-| 💊 Medication Tracker | Daily checklist with adherence scoring |
-| 💬 Real-time Chat | Secure Socket.io messaging between patients and doctors |
-| 🩺 Consultation Flow | Structured notes, diagnoses, and prescriptions |
-| 📊 Proactive Alerts | Non-adherence detection and follow-up reminders |
+### 🌟 Key Features
+- **Video Consultations (WebRTC):** Seamless, 1-click encrypted peer-to-peer video calls between doctors and patients.
+- **Smart Health Timeline:** A chronological, unified view of a patient’s entire health journey (prescriptions, diagnoses, events).
+- **AI Analytics Dashboard:** 7-day adherence charting, dynamic medication metrics, and AI health warnings generated from pattern detection.
+- **Actionable Care Plans:** Structured post-visit instructions with built-in checklist tracking.
+- **Role-Based Workspaces:**
+  - **Patients:** Track meds, join video calls, view timelines.
+  - **Doctors:** Access patient population analytics, schedule video appointments, create care plans.
+  - **Caregivers:** Linked to patients to monitor medication adherence and intervene when metrics decline.
+- **Context-Aware Notifications:** "Smart Scanned" priority alerts (e.g., High Priority: Pending Medications).
 
 ---
 
-## 🏗️ Architecture
+## 🚀 Quick Start (Hackathon Setup)
 
-```
-┌──────────────────┐     ┌────────────────────┐     ┌─────────────┐
-│   React + Vite   │────▶│  Node.js + Express │────▶│   MongoDB   │
-│   (Frontend)     │     │    (REST API)       │     │  (Database) │
-│   TailwindCSS    │     │   Socket.io         │     │             │
-└──────────────────┘     └────────────────────┘     └─────────────┘
-        │                         │
-        └─── WebSocket ───────────┘
-             (Real-time Chat)
-```
-
-## 🚀 Quick Start
+We designed this MVP to be instantly runnable with **zero external database setup required!** This project uses a custom-built file-based JSON caching database (`db.json`) allowing judges/evaluators to immediately clone and run the system exactly as intended.
 
 ### Prerequisites
 - Node.js 18+
-- MongoDB (local or Atlas)
 - npm or yarn
 
-### Installation
+### 1. Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/aura-health-systems.git
-cd aura-health-systems
+git clone https://github.com/cyber-pranav/Aurahealth--Connected-healthcare-system.git
+cd Aurahealth--Connected-healthcare-system
 
 # Install backend dependencies
 cd backend
@@ -70,128 +58,63 @@ cd ../frontend
 npm install
 ```
 
-### Configuration
-
-Create `.env` files:
-
-**Backend (`backend/.env`):**
-```env
-PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/healthcare_mvp
-JWT_SECRET=your_secret_key_here
+### 2. Seeding the Clean Database
+*Important: Do this before starting the backend server.*
+```bash
+cd backend
+node seed.js
 ```
+*(This ensures a pristine, fully-populated database with dummy doctors, patients, and caregivers).*
 
-**Frontend (`frontend/.env`):**
-```env
-VITE_API_URL=http://localhost:5000
-```
-
-### Run
+### 3. Run the Application
 
 ```bash
-# Terminal 1: Start backend
+# In Terminal 1 (Backend)
 cd backend
-npm run dev
+node server.js
 
-# Terminal 2: Start frontend
+# In Terminal 2 (Frontend)
 cd frontend
 npm run dev
 ```
 
-Open `http://localhost:5173` in your browser.
+Open `http://localhost:5173` in your web browser.
 
 ---
 
-## 📁 Project Structure
+## 👥 Demo Logins
 
-```
-aura-health-systems/
-├── backend/
-│   ├── controllers/       # Request handlers
-│   │   ├── authController.js
-│   │   └── clinicController.js
-│   ├── middleware/         # Auth & RBAC middleware
-│   ├── models/            # Mongoose schemas
-│   │   ├── User.js
-│   │   ├── Appointment.js
-│   │   ├── MedicalRecord.js
-│   │   ├── Prescription.js
-│   │   ├── MedicationLog.js
-│   │   ├── Message.js
-│   │   └── Notification.js
-│   ├── routes/            # API route definitions
-│   └── server.js          # Entry point
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/    # Layout, shared UI
-│   │   ├── context/       # Auth context provider
-│   │   ├── pages/         # All application pages
-│   │   │   ├── Landing.jsx
-│   │   │   ├── Login.jsx
-│   │   │   ├── Register.jsx
-│   │   │   ├── PatientDashboard.jsx
-│   │   │   ├── DoctorDashboard.jsx
-│   │   │   ├── Appointments.jsx
-│   │   │   ├── Consultation.jsx
-│   │   │   ├── MedicationTracker.jsx
-│   │   │   └── Chat.jsx
-│   │   └── services/      # API client
-│   └── index.html
-│
-└── README.md
-```
+Use these accounts to test the different role-based views. **Password for all accounts is:** `Demo@1234`
 
-## 🔑 API Endpoints
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/auth/register` | ❌ | Register new user |
-| POST | `/api/auth/login` | ❌ | Login & get JWT |
-| GET | `/api/auth/me` | ✅ | Get current user |
-| GET | `/api/clinic/doctors` | ✅ | List all doctors |
-| POST | `/api/clinic/appointments` | ✅ Patient | Book appointment |
-| GET | `/api/clinic/appointments` | ✅ | Get appointments |
-| POST | `/api/clinic/consultations` | ✅ Doctor | Submit consultation |
-| GET | `/api/clinic/medications/schedule` | ✅ Patient | Get med schedule |
-| POST | `/api/clinic/medications/log` | ✅ Patient | Log medication dose |
-
-## 🛡️ Security
-
-- **JWT Authentication** with 7-day token expiry
-- **Role-Based Access Control** (Patient, Doctor)
-- **Password Hashing** with bcryptjs
-- **CORS** configured for cross-origin requests
-
-## 👥 User Roles
-
-### Patient
-- Book appointments with doctors
-- View medication schedule & track adherence
-- Real-time chat with healthcare providers
-- Access unified medical records
-
-### Doctor
-- View patient queue & appointment calendar
-- Submit consultations with structured notes
-- Prescribe medications with auto-generated schedules
-- Chat with patients in real-time
+| Role | Name | Email |
+|------|------|-------|
+| **Patient** | Arjun Kapoor | `arjun@test.com` |
+| **Patient** | Meera Reddy | `meera@test.com` |
+| **Doctor** | Dr. Priya Sharma | `priya@aurahealth.com` |
+| **Caregiver** | Kavita (Wife of Arjun) | `kavita@test.com` |
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Architecture
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 19, Vite, TailwindCSS, React Router |
-| Backend | Node.js, Express.js, Socket.io |
-| Database | MongoDB, Mongoose |
-| Auth | JWT, bcryptjs |
-| Real-time | Socket.io (WebSocket) |
-| Design | Material Symbols, Inter Font |
+| **Frontend** | React 19, Vite, TailwindCSS (Arbitrary Values & Custom Design System) |
+| **Backend** | Node.js, Express.js |
+| **Real-time** | Socket.io (Chat & WebRTC signaling) |
+| **Video Calls** | WebRTC APIs (P2P Mesh) |
+| **Database** | Custom JSON-File Mocking Engine (`fs` buffering) |
+| **Auth** | JWT, bcryptjs |
 
 ---
 
+## 📁 System Architecture Walkthrough
+
+- **`frontend/src/pages/VideoConsultationRoom.jsx`**: Handles WebRTC RTCPeerConnection, ICE candidate exchange via Socket.io, and dual-video rendering.
+- **`frontend/src/pages/AnalyticsDashboard.jsx`**: Generates circular SVG gauges and responsive adherence bar charts based on fetched health telemetry.
+- **`backend/controllers/analyticsController.js`**: Analyzes the raw medication logs to synthesize AI warnings (e.g., detecting declining adherence trends over 3 days).
+- **`backend/seed.js`**: Automatically rebuilds complex relational structures into `db.json` asynchronously.
+
 ## 📄 License
 
-MIT License — Built with ❤️ for better healthcare.
+MIT License — Built with ❤️ to revolutionize patient care coordination.
