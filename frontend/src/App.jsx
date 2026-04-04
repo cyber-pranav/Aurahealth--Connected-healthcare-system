@@ -4,10 +4,16 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
+import CaregiverDashboard from './pages/CaregiverDashboard';
 import Appointments from './pages/Appointments';
 import Consultation from './pages/Consultation';
 import MedicationTracker from './pages/MedicationTracker';
 import Chat from './pages/Chat';
+import HealthTimeline from './pages/HealthTimeline';
+import CarePlans from './pages/CarePlans';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
+import NotificationsPanel from './pages/NotificationsPanel';
+import VideoConsultationRoom from './pages/VideoConsultationRoom';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 
@@ -30,24 +36,36 @@ function App() {
     );
   }
 
+  const getDashboard = () => {
+    if (!user) return <Landing />;
+    if (user.role === 'DOCTOR') return <DoctorDashboard />;
+    if (user.role === 'CAREGIVER') return <CaregiverDashboard />;
+    return <PatientDashboard />;
+  };
+
   return (
     <Routes>
       <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Landing />} />
       <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
-      
+
+      {/* Video consultation - full screen, outside layout */}
+      <Route path="/video/:appointmentId" element={
+        <ProtectedRoute><VideoConsultationRoom /></ProtectedRoute>
+      } />
+
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route path="/dashboard" element={
-          user?.role === 'DOCTOR' ? <DoctorDashboard /> : <PatientDashboard />
-        } />
+        <Route path="/dashboard" element={getDashboard()} />
         <Route path="/appointments" element={<Appointments />} />
         <Route path="/consultation/:appointmentId" element={
           <ProtectedRoute roles={['DOCTOR']}><Consultation /></ProtectedRoute>
         } />
-        <Route path="/medications" element={
-          <ProtectedRoute roles={['PATIENT']}><MedicationTracker /></ProtectedRoute>
-        } />
+        <Route path="/medications" element={<MedicationTracker />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/timeline" element={<HealthTimeline />} />
+        <Route path="/care-plans" element={<CarePlans />} />
+        <Route path="/analytics" element={<AnalyticsDashboard />} />
+        <Route path="/notifications" element={<NotificationsPanel />} />
       </Route>
     </Routes>
   );

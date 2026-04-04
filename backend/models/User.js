@@ -1,19 +1,29 @@
-const mongoose = require('mongoose');
+const mongoose = require("../mock-db");
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['PATIENT', 'DOCTOR', 'ADMIN'], default: 'PATIENT' },
+  role: { type: String, enum: ['PATIENT', 'DOCTOR', 'CAREGIVER', 'ADMIN'], default: 'PATIENT' },
   
-  // Specific blocks based on role (using a mixed/flexible schema for simplicity in MVP)
-  specialization: { type: String }, // For DOCTOR
-  experienceYears: { type: Number }, // For DOCTOR
+  // Doctor-specific fields
+  specialization: { type: String },
+  experienceYears: { type: Number },
   
-  allergies: [{ type: String }], // For PATIENT
-  chronicConditions: [{ type: String }], // For PATIENT
-  age: { type: Number }, // For PATIENT
-  gender: { type: String, enum: ['Male', 'Female', 'Other'] }, // For PATIENT
+  // Patient-specific fields
+  allergies: [{ type: String }],
+  chronicConditions: [{ type: String }],
+  age: { type: Number },
+  gender: { type: String, enum: ['Male', 'Female', 'Other'] },
+  
+  // Multi-doctor coordination: doctors who have access to this patient
+  assignedDoctors: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  
+  // Caregiver fields: patients linked to this caregiver
+  linkedPatients: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  
+  // Caregiver relationship description
+  caregiverRelation: { type: String }, // e.g. "Mother", "Spouse", "Son"
 
 }, { timestamps: true });
 

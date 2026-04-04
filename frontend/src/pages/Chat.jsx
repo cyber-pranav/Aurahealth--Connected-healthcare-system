@@ -13,7 +13,11 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState('');
   const [socket, setSocket] = useState(null);
   const [showContacts, setShowContacts] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState(null);
   const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
     loadContacts();
@@ -23,26 +27,70 @@ export default function Chat() {
   }, []);
 
   useEffect(() => {
+    if (!socket) return;
+
+    socket.on('receive_message', (data) => {
+      setMessages(prev => [...prev, data]);
+    });
+
+    socket.on('user_typing', (data) => {
+      if (data.senderId !== user._id) {
+        setTypingUser(data.senderName);
+        setIsTyping(true);
+      }
+    });
+
+    socket.on('user_stop_typing', (data) => {
+      if (data.senderId !== user._id) {
+        setIsTyping(false);
+        setTypingUser(null);
+      }
+    });
+
+    return () => {
+      socket.off('receive_message');
+      socket.off('user_typing');
+      socket.off('user_stop_typing');
+    };
+  }, [socket, user._id]);
+
+  useEffect(() => {
     if (socket && selectedContact) {
       const roomId = [user._id, selectedContact._id].sort().join('_');
       socket.emit('join_room', roomId);
-
-      socket.on('receive_message', (data) => {
-        setMessages(prev => [...prev, data]);
-      });
-
-      return () => socket.off('receive_message');
+      loadChatHistory(roomId);
     }
+    setIsTyping(false);
   }, [socket, selectedContact]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isTyping]);
+
+  const loadChatHistory = async (roomId) => {
+    setLoadingHistory(true);
+    try {
+      const res = await api.get(`/clinic/messages/${roomId}`);
+      // Map DB format to UI format
+      const history = res.data.map(m => ({
+        roomId: m.roomId,
+        message: m.content,
+        senderId: m.senderId?._id || m.senderId,
+        senderName: m.senderName || m.senderId?.name,
+        timestamp: m.timestamp
+      }));
+      setMessages(history);
+    } catch (err) {
+      console.error('Failed to load chat history', err);
+      setMessages([]);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const loadContacts = async () => {
     try {
       if (user.role === 'PATIENT') {
-        // Patients see doctors from their appointments
         const res = await api.get('/clinic/appointments');
         const doctorMap = new Map();
         res.data.forEach(apt => {
@@ -52,7 +100,6 @@ export default function Chat() {
         });
         setContacts(Array.from(doctorMap.values()));
       } else {
-        // Doctors see patients from their appointments
         const res = await api.get('/clinic/appointments');
         const patientMap = new Map();
         res.data.forEach(apt => {
@@ -65,6 +112,17 @@ export default function Chat() {
     } catch (err) {
       console.error('Failed to load contacts', err);
     }
+  };
+
+  const handleTyping = (e) => {
+    setNewMessage(e.target.value);
+    if (!socket || !selectedContact) return;
+    const roomId = [user._id, selectedContact._id].sort().join('_');
+    socket.emit('typing', { roomId, senderId: user._id, senderName: user.name });
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit('stop_typing', { roomId, senderId: user._id });
+    }, 1500);
   };
 
   const sendMessage = (e) => {
@@ -81,8 +139,16 @@ export default function Chat() {
     };
 
     socket.emit('send_message', messageData);
+    socket.emit('stop_typing', { roomId, senderId: user._id });
     setMessages(prev => [...prev, messageData]);
     setNewMessage('');
+    clearTimeout(typingTimeoutRef.current);
+  };
+
+  const selectContact = (contact) => {
+    setSelectedContact(contact);
+    setMessages([]);
+    setShowContacts(false);
   };
 
   return (
@@ -114,11 +180,7 @@ export default function Chat() {
             contacts.map((contact) => (
               <button
                 key={contact._id}
-                onClick={() => {
-                  setSelectedContact(contact);
-                  setMessages([]);
-                  setShowContacts(false);
-                }}
+                onClick={() => selectContact(contact)}
                 className={`w-full p-4 flex items-center gap-3 hover:bg-surface-container-high/50 
                   transition-all duration-200 border-b border-outline-variant/10
                   ${selectedContact?._id === contact._id ? 'bg-secondary-container/30' : ''}`}
@@ -160,26 +222,33 @@ export default function Chat() {
                   {user.role === 'PATIENT' ? 'stethoscope' : 'person'}
                 </span>
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-semibold text-on-surface">
                   {user.role === 'PATIENT' ? `Dr. ${selectedContact.name}` : selectedContact.name}
                 </p>
-                <p className="text-xs text-primary">Online</p>
+                <p className="text-xs text-primary">
+                  {isTyping ? `${typingUser} is typing...` : 'Online'}
+                </p>
               </div>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.length === 0 && (
+              {loadingHistory ? (
+                <div className="flex items-center justify-center py-12">
+                  <span className="material-symbols-outlined animate-spin text-primary text-3xl">progress_activity</span>
+                </div>
+              ) : messages.length === 0 ? (
                 <div className="text-center py-20">
                   <span className="material-symbols-outlined text-5xl text-on-surface-variant/20">chat_bubble_outline</span>
                   <p className="text-on-surface-variant/60 mt-3 text-sm">
                     Start a conversation with {user.role === 'PATIENT' ? `Dr. ${selectedContact.name}` : selectedContact.name}
                   </p>
                 </div>
-              )}
-              {messages.map((msg, i) => {
-                const isMe = msg.senderId === user._id;
+              ) : null}
+
+              {!loadingHistory && messages.map((msg, i) => {
+                const isMe = msg.senderId === user._id || msg.senderId?.toString() === user._id?.toString();
                 return (
                   <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-fade-in`}>
                     <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm
@@ -196,6 +265,20 @@ export default function Chat() {
                   </div>
                 );
               })}
+
+              {/* Typing indicator */}
+              {isTyping && !loadingHistory && (
+                <div className="flex justify-start animate-fade-in">
+                  <div className="bg-surface-container px-4 py-3 rounded-2xl rounded-bl-md">
+                    <div className="flex gap-1 items-center h-4">
+                      <div className="w-2 h-2 bg-on-surface-variant/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 bg-on-surface-variant/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2 h-2 bg-on-surface-variant/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div ref={messagesEndRef} />
             </div>
 
@@ -205,14 +288,14 @@ export default function Chat() {
                 <input
                   type="text"
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={handleTyping}
                   className="flex-1 px-4 py-3 rounded-2xl bg-surface-container-low border border-outline-variant/40
                     text-on-surface text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   placeholder="Type a message..."
                 />
                 <button type="submit" disabled={!newMessage.trim()}
                   className="p-3 bg-primary text-on-primary rounded-2xl hover:bg-primary/90 
-                    transition-all disabled:opacity-30 shadow-sm">
+                    transition-all disabled:opacity-30 shadow-sm active:scale-95">
                   <span className="material-symbols-outlined text-xl">send</span>
                 </button>
               </div>

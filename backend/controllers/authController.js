@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role, specialization, experienceYears, allergies, chronicConditions, age, gender } = req.body;
+    const { name, email, password, role, specialization, experienceYears, allergies, chronicConditions, age, gender, linkedPatientEmail, caregiverRelation } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ error: 'Email already exists.' });
@@ -12,12 +12,22 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = new User({
-      name, email, password: hashedPassword, role,
-      specialization, experienceYears, // For doctors
-      allergies, chronicConditions, age, gender // For patients
-    });
+    const userData = {
+      name, email, password: hashedPassword, role: role || 'PATIENT',
+      specialization, experienceYears,
+      allergies, chronicConditions, age, gender,
+      caregiverRelation
+    };
 
+    // If registering as caregiver, link to patient
+    if (role === 'CAREGIVER' && linkedPatientEmail) {
+      const patient = await User.findOne({ email: linkedPatientEmail });
+      if (patient) {
+        userData.linkedPatients = [patient._id];
+      }
+    }
+
+    const user = new User(userData);
     await user.save();
     res.status(201).json({ message: 'User registered successfully.' });
   } catch (error) {
@@ -53,5 +63,41 @@ exports.getMe = async (req, res) => {
     res.json(user);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch user.', details: error.message });
+  }
+};
+
+// Link caregiver to patient
+exports.linkPatient = async (req, res) => {
+  try {
+    const { patientEmail } = req.body;
+    const patient = await User.findOne({ email: patientEmail, role: 'PATIENT' });
+    if (!patient) return res.status(404).json({ error: 'Patient not found.' });
+
+    const caregiver = await User.findById(req.user._id);
+    if (!caregiver.linkedPatients) caregiver.linkedPatients = [];
+    if (!caregiver.linkedPatients.includes(patient._id)) {
+      caregiver.linkedPatients.push(patient._id);
+      await caregiver.save();
+    }
+    res.json({ message: 'Patient linked successfully.', patientId: patient._id, patientName: patient.name });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get linked patients for caregiver
+exports.getLinkedPatients = async (req, res) => {
+  try {
+    const caregiver = await User.findById(req.user._id);
+    if (!caregiver || !caregiver.linkedPatients) return res.json([]);
+    
+    const patients = [];
+    for (const pid of caregiver.linkedPatients) {
+      const p = await User.findById(pid).select('-password');
+      if (p) patients.push(p);
+    }
+    res.json(patients);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };

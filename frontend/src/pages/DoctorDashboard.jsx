@@ -41,7 +41,7 @@ export default function DoctorDashboard() {
       <div className="space-y-6 animate-pulse">
         <div className="h-8 w-48 skeleton" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1,2,3].map(i => <div key={i} className="h-32 skeleton rounded-3xl" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-32 skeleton rounded-3xl" />)}
         </div>
       </div>
     );

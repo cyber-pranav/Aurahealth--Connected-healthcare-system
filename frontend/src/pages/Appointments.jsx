@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 export default function Appointments() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [showBooking, setShowBooking] = useState(false);
@@ -45,6 +47,17 @@ export default function Appointments() {
     }
   };
 
+  const updateStatus = async (aptId, status) => {
+    try {
+      await api.patch(`/clinic/appointments/${aptId}/status`, { status });
+      setAppointments(prev =>
+        prev.map(a => a._id === aptId ? { ...a, status } : a)
+      );
+    } catch (err) {
+      console.error('Failed to update status', err);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'scheduled': return 'bg-primary/10 text-primary';
@@ -57,7 +70,7 @@ export default function Appointments() {
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse">
-        {[1,2,3].map(i => <div key={i} className="h-20 skeleton rounded-2xl" />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-20 skeleton rounded-2xl" />)}
       </div>
     );
   }
@@ -136,7 +149,7 @@ export default function Appointments() {
               <button type="submit" disabled={submitting}
                 className="px-6 py-2.5 bg-primary text-on-primary rounded-2xl font-semibold text-sm
                   hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50 flex items-center gap-2">
-                {submitting ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : 
+                {submitting ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> :
                   <><span className="material-symbols-outlined text-lg">check</span> Confirm Booking</>}
               </button>
               <button type="button" onClick={() => setShowBooking(false)}
@@ -169,13 +182,13 @@ export default function Appointments() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-on-surface">
-                    {user.role === 'PATIENT' 
+                    {user.role === 'PATIENT'
                       ? `Dr. ${apt.doctorId?.name || 'Unknown'}`
                       : apt.patientId?.name || 'Patient'
                     }
                   </p>
                   <p className="text-xs text-on-surface-variant mt-0.5">
-                    {user.role === 'PATIENT' 
+                    {user.role === 'PATIENT'
                       ? apt.doctorId?.specialization || 'General'
                       : `${apt.patientId?.gender || ''} ${apt.patientId?.age ? `• ${apt.patientId.age} yrs` : ''}`
                     }
@@ -194,6 +207,32 @@ export default function Appointments() {
                   {apt.status}
                 </span>
               </div>
+
+              {/* Action buttons */}
+              {apt.status === 'scheduled' && (
+                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-outline-variant/10">
+                  <button onClick={() => navigate(`/video/${apt._id}`)}
+                    className="px-4 py-2 rounded-xl bg-secondary-container text-on-secondary-container text-xs font-semibold hover:bg-secondary-container/70 transition-all flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base">videocam</span>Join Video Call
+                  </button>
+                  {user.role === 'DOCTOR' && (
+                    <>
+                      <button onClick={() => navigate(`/consultation/${apt._id}`)}
+                        className="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 transition-all flex items-center gap-1.5 shadow-sm">
+                        <span className="material-symbols-outlined text-base">clinical_notes</span>Consult
+                      </button>
+                      <button onClick={() => updateStatus(apt._id, 'completed')}
+                        className="px-4 py-2 rounded-xl bg-primary-container text-on-primary-container text-xs font-semibold hover:bg-primary-container/70 transition-all flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-base">task_alt</span>Complete
+                      </button>
+                    </>
+                  )}
+                  <button onClick={() => updateStatus(apt._id, 'cancelled')}
+                    className="px-4 py-2 rounded-xl border border-error/30 text-error text-xs font-semibold hover:bg-error-container/30 transition-all flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base">event_busy</span>Cancel
+                  </button>
+                </div>
+              )}
             </div>
           ))
         )}

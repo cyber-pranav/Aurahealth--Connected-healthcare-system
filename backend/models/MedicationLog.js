@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("../mock-db");
 
 const medicationLogSchema = new mongoose.Schema({
   prescriptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Prescription', required: true },

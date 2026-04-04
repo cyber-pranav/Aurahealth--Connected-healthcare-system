@@ -39,7 +39,7 @@ export default function Landing() {
             <span className="gradient-text">Reimagined.</span>
           </h1>
           <p className="text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto mb-10 leading-relaxed">
-            Seamless coordination between patients and doctors. 
+            Seamless coordination between patients and doctors.
             Unified medical records, smart medication tracking, and real-time communication — all in one platform.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

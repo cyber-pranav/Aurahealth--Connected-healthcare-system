@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("../mock-db");
 
 const prescriptionSchema = new mongoose.Schema({
   recordId: { type: mongoose.Schema.Types.ObjectId, ref: 'MedicalRecord' }, // Optional, can be standalone
