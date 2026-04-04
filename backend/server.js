@@ -14,8 +14,27 @@ const io = new Server(server, {
   }
 });
 
-app.use(cors());
+// CORS — allow localhost in dev, Cloud Run frontend URL in prod
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile, Postman, curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Permissive for hackathon — tighten in prod
+  },
+  credentials: true
+}));
 app.use(express.json());
+
+// Health check for Cloud Run
+app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // Routes imports
 const authRoutes = require('./routes/authRoutes');
@@ -24,9 +43,9 @@ const clinicRoutes = require('./routes/clinicRoutes');
 app.use('/api/auth', authRoutes);
 app.use('/api/clinic', clinicRoutes);
 
-// Basic Route for testing
+// Root route
 app.get('/', (req, res) => {
-  res.send('Healthcare MVP APi is running.');
+  res.json({ name: 'Aura Health Systems API', version: '1.0.0', status: 'running' });
 });
 
 // Socket.io for Real-time chat & notifications
