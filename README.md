@@ -34,9 +34,9 @@ Aura Health Systems solves this by creating a highly structured, data-driven env
 
 ---
 
-## 🚀 Quick Start (Hackathon Setup)
+### live link
 
-We designed this MVP to be instantly runnable with **zero external database setup required!** This project uses a custom-built file-based JSON caching database (`db.json`) allowing judges/evaluators to immediately clone and run the system exactly as intended.
+https://aurahealth-connected-healthcare-sys.vercel.app/
 
 ### Prerequisites
 - Node.js 18+
