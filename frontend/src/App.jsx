@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -16,6 +18,7 @@ import NotificationsPanel from './pages/NotificationsPanel';
 import VideoConsultationRoom from './pages/VideoConsultationRoom';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
+import AuraLoader from './components/AuraLoader';
 
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
@@ -27,13 +30,22 @@ function ProtectedRoute({ children, roles }) {
 
 function App() {
   const { user, loading } = useAuth();
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Artificial premium load state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 4500); // Allow sufficient time for the user to see the animations
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) {
+    return <AnimatePresence mode="wait"><AuraLoader /></AnimatePresence>;
+  }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-surface">
-        <span className="material-symbols-outlined text-primary text-6xl animate-spin">progress_activity</span>
-      </div>
-    );
+    return <AuraLoader />;
   }
 
   const getDashboard = () => {
